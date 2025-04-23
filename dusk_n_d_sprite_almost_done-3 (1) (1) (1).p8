@@ -39,7 +39,7 @@ function _init()
 		acc = 1,
 		boost = 4,
 		anim = 0,
-        dead = false,
+        lives = 3,
         delivered_items = 0
     }
 
@@ -207,6 +207,49 @@ end
         draw_carmilla()
     end
 }
+
+states.gameover = {
+    update = function()
+        -- wait for restart input (e.g., button press)
+        if btnp(❎) or btnp(🅾️) then
+            -- reset the game state
+            state = "menu"
+            -- reset carmilla's state
+            carmilla = {
+                sprite = 1,
+                x=40 * 8,
+                y=20 * 8,
+                w = 8,
+                h = 8,
+                flipped = false,
+                climbing = false,
+                falling = false,
+                landed = false,
+                dx = 0,
+                dy = 0,
+                max_dx = 2,
+                max_dy = 3,
+                acc = 1,
+                boost = 4,
+                anim = 0,
+                lives = 3,
+                delivered_items = 0
+            }
+        end
+    end,
+    
+    draw = function()
+        cls()  -- clear the screen
+        camera(0, 0)
+    -- draw game over text
+        print("game over", 44, 10)
+        print("van helsing killed all the students", 1, 20)
+        print("press x to restart", 8, 80)
+    end
+}
+
+
+
 function draw_hb(x, y, w, h, col)
     rect(x, y, x + w - 1, y + h - 1, col or 15)
 end
@@ -214,7 +257,6 @@ end
 function draw_npc(n)
     spr(n.sp, n.x, n.y)
     
-
     if n.show_prompt and not n.talking then
         spr(26, n.x + 4, n.y - 8) -- position above npc
     end
@@ -335,6 +377,19 @@ function update_carmilla()
 
     carmilla.x += carmilla.dx
     carmilla.y += carmilla.dy
+
+    -- map limit check (y = 368)
+    if carmilla.y > 368 then
+        carmilla.lives -= 1
+        if carmilla.lives > 0 then
+            carmilla.x = 40 * 8
+            carmilla.y = 20 * 8
+            carmilla.dx = 0
+            carmilla.dy = 0
+        else
+            state = "gameover"
+        end
+    end
 
 
 end
