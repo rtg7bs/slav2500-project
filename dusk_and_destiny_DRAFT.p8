@@ -173,20 +173,21 @@ states.game = {
         end
 
         -- player update; add if statement
-  update_carmilla()
-  
-  for key, npc in pairs(npcs) do
-    local dist = abs(carmilla.x - npc.x) + abs(carmilla.y - npc.y)
-    if dist < 12 then  -- interaction range
-        npc.show_prompt = true
-        if btnp(❎) then
-            npc.talking = not npc.talking
+        update_carmilla()
+        
+
+        for key, npc in pairs(npcs) do
+            local dist = abs(carmilla.x - npc.x) + abs(carmilla.y - npc.y)
+            if dist < 12 then  -- interaction range
+                npc.show_prompt = true
+                if btnp(❎) then
+                    npc.talking = not npc.talking
+                end
+            else
+                npc.show_prompt = false
+                npc.talking = false
+            end
         end
-    else
-        npc.show_prompt = false
-        npc.talking = false
-    end
-end
        
         cam_y = carmilla.y - 64 + (carmilla.h / 2)
         camera(flr(cam_x), flr(cam_y))
@@ -199,6 +200,7 @@ end
         -- screen is 128x128, each tile is 8 pixels
         map(0,0)   
         
+        
         -- draw npcs
         for key, val in pairs(npcs) do
             draw_npc(val)
@@ -206,6 +208,11 @@ end
         
         -- draw carmilla
         draw_carmilla()
+
+        -- reset cam to draw text
+        -- display num lives left
+        camera()
+        print("lives: "..carmilla.lives, 5, 11, 7)
     end
 }
 
