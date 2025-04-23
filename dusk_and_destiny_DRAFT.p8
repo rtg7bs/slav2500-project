@@ -67,9 +67,7 @@ npcs = {
         sp=37,
         show_prompt = false,
         talking = false,
-        text = "garlic under the school",
-    
-    
+        text = "the garlic is\nunder the school.",
     },
     flask_npc = {
         x = 0, y = 0, w = 8, h = 8,
@@ -86,14 +84,14 @@ npcs = {
         text = ""
     },
     glide_npc = {
-                                x = 0, y = 0, w = 8, h = 8,
+        x = 0, y = 0, w = 8, h = 8,
         sp = 0,
         show_prompt = false,
         talking = false,
         text = ""
     },
     intro_npc = {
-                            x = 0, y = 0, w = 8, h = 8,
+        x = 0, y = 0, w = 8, h = 8,
         sp = 0,
         show_prompt = false,
         talking = false,
@@ -271,11 +269,35 @@ function draw_npc(n)
 
     if n.talking then
         -- draw speech bubble
-        rectfill(n.x - 8, n.y - 20, n.x + 40, n.y - 10, 7)  -- background
-        rect(n.x - 8, n.y - 20, n.x + 40, n.y - 10, 0)      -- border
-        print(n.text, n.x - 6, n.y - 18, 0)
+        --rectfill(n.x - 8, n.y - 20, n.x + 40, n.y - 10, 7)  -- background
+        --rect(n.x - 8, n.y - 20, n.x + 40, n.y - 10, 0)      -- border
+        --print(n.text, n.x - 6, n.y - 18, 0)
+
+        local lines = split(n.text, "\n")
+        local padding = 4
+        local line_height = 6
+        local bubble_width = 80  -- adjust if needed
+        
+        -- calculate bubble height based on number of lines
+        local bubble_height = #lines * line_height + padding
+        
+        -- top-left and bottom-right coords of bubble
+        local bx1 = n.x - 8
+        local by1 = n.y - bubble_height - 10
+        local bx2 = bx1 + bubble_width
+        local by2 = n.y - 10
+
+        -- draw bubble background and border
+        rectfill(bx1, by1, bx2, by2, 7)
+        rect(bx1, by1, bx2, by2, 0)
+
+        -- draw each line of text
+        for i = 1, #lines do
+            print(lines[i], bx1 + 2, by1 + 2 + (i - 1) * line_height, 0)
+        end
     end
 end
+
 
 function draw_carmilla()
     spr(carmilla.sprite, flr(carmilla.x), flr(carmilla.y), 1, 1, carmilla.flipped)
