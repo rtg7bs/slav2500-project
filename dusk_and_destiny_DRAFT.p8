@@ -63,6 +63,8 @@ end
 -- global anim_timer for npc animation
 anim_timer = 0
 
+countdown_timer = 5 * 60
+
 -- create list of NPCs
 npcs = {
     groundskeeper_npc = {
@@ -169,6 +171,11 @@ states.menu = {
 states.game = {
     update = function()
         anim_timer += 1
+        if countdown_timer > 0 then
+            countdown_timer -= 1/30 -- subtract 1 frame
+            countdown_timer = max(0, countdown_timer) -- make sure never drops under 0
+        end
+
         --simple cam
         cam_x = carmilla.x-64+(carmilla.w/2)
         if cam_x < map_start then
@@ -218,7 +225,20 @@ states.game = {
         -- reset cam to draw text
         -- display num lives left
         camera()
-        print("lives: "..carmilla.lives, 5, 11, 7)
+        print("lives: "..carmilla.lives, 5, 10, 7)
+
+        -- calc mins and secs left
+        local mins = flr(countdown_timer / 60)
+        local secs = flr(countdown_timer % 60)
+
+        local display_time = mins .. ":" 
+
+        if secs < 10 then
+            display_time = display_time .. "0" .. secs
+        else
+            display_time = display_time .. secs
+        end
+        print(display_time, 5, 18, 7)
     end
 }
 
