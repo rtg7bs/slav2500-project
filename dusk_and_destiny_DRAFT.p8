@@ -22,7 +22,7 @@ function _init()
 
     -- carmilla initial state
     carmilla = {
-        sprite = 1,
+        sp = 1,
         x=40 * 8,
         y=20 * 8,
         w = 8,
@@ -32,6 +32,8 @@ function _init()
         gliding = false,
         falling = false,
         landed = false,
+        running = false,
+        jumping = false,
         dx = 0,
         dy = 0,
         max_dx = 2,
@@ -40,7 +42,9 @@ function _init()
         boost = 3.5,
         anim = 0,
         lives = 3,
-        delivered_items = 0
+        delivered_items = 0,
+        gloves = false,
+        glide_dir = 1 -- controls ping-pong of gliding
     }
 
     --map limits
@@ -263,7 +267,7 @@ states.game = {
     end
 }
 
-states.gameover = {
+states.gameover_lost = {
     update = function()
         -- wait for restart input (e.g., button press)
         if btnp(❎) or btnp(🅾️) then
@@ -401,7 +405,8 @@ end
 
 
 function draw_carmilla()
-    spr(carmilla.sprite, flr(carmilla.x), flr(carmilla.y), 1, 1, carmilla.flipped)
+    carmilla_animate()
+    spr(carmilla.sp, flr(carmilla.x), flr(carmilla.y), 1, 1, carmilla.flipped)
 
 end
 
@@ -450,29 +455,38 @@ function update_carmilla()
     local acc = 0.5
     local max_dx = 3
     local friction = 0.7
+
     -- physics
-    if (not carmilla.climbing) then 
+
+    if not carmilla.landed and not carmilla.climbing and btn(⬆️) and btn(❎) then
+        carmilla.gliding = true
+        carmilla.dy = min(carmilla.dy, 0.3)
+    elseif not carmilla.climbing then
         carmilla.dy += gravity
+    elseif carmilla.gliding then
+        carmilla.gliding = false
     end
+
     if (carmilla.climbing) then
         carmilla.dy *= friction
     end
-
-    
     -- movement controls
     if btn(⬅️) then 
         --carmilla.dx -= carmilla.acc
         carmilla.dx = max(carmilla.dx - acc, -max_dx)
+        carmilla.running = true
         carmilla.flipped=true
     elseif (btn(➡️)) then
         --carmilla.dx += carmilla.acc
         carmilla.dx = min(carmilla.dx + acc, max_dx)
+        carmilla.running = true
         carmilla.flipped=false
     elseif btn(⬆️) and carmilla.climbing then
         carmilla.dy = -carmilla.acc
     elseif btn(⬇️) and carmilla.climbing then
         carmilla.dy = carmilla.acc
     else
+        carmilla.running = false
         -- friction: slow down when not pressing buttons
         carmilla.dx *= friction
 
@@ -486,13 +500,15 @@ function update_carmilla()
     if btnp(🅾️) and carmilla.landed then
         carmilla.dy-=carmilla.boost
         carmilla.landed=false
+        carmilla.jumping = true
+    elseif carmilla.jumping then
+        carmilla.jumping = false
     end
 
     -- climbing
-    if collide_map(carmilla, "up", FLAG_LADDER) then
+    if not carmilla.gliding and collide_map(carmilla, "up", FLAG_LADDER) then
         if btn(⬆️) then
             carmilla.climbing = true
-            carmilla.gliding = false
         end
     elseif carmilla.climbing then -- makes sure she isn't climbing forever
         carmilla.climbing = false
@@ -506,6 +522,7 @@ function update_carmilla()
         if collide_map(carmilla, "down", FLAG_SOLID) then
             carmilla.landed = true
             carmilla.falling = false
+            carmilla.gliding = false
             carmilla.dy = 0
             carmilla.y -= ((carmilla.y + carmilla.h + 1) % 8) - 1
         end
@@ -526,6 +543,7 @@ function update_carmilla()
     carmilla.x += carmilla.dx
     carmilla.y += carmilla.dy
 
+
     -- map limit check (y = 368)
     if carmilla.y > 376 then
         carmilla.lives -= 1
@@ -535,24 +553,87 @@ function update_carmilla()
             carmilla.dx = 0
             carmilla.dy = 0
         else
-            state = "gameover"
+            state = "gameover_lost"
         end
     end
 
     if carmilla.lives == 0 then
-        state = "gameover"
+        state = "gameover_lost"
     end
 
 end
+
+function carmilla_animate()
+    -- jumping
+    if carmilla.jumping then 
+        carmilla.sp = 2
+
+    -- climbing
+    elseif carmilla.climbing then
+        if btn(⬆️) or btn(⬇️) then
+            if time() - carmilla.anim > 0.2 then
+                carmilla.anim = time()
+                if carmilla.sp ~= 5 and carmilla.sp ~= 6 then
+                    carmilla.sp = 5
+                elseif carmilla.sp == 5 then
+                    carmilla.sp = 6
+                else
+                    carmilla.sp = 5
+                end
+            end
+        else
+            -- not moving on the ladder, hold one frame
+            carmilla.sp = 5
+        end
+
+    -- gliding
+    elseif carmilla.gliding then
+        if time() - carmilla.anim > 0.15 then
+            carmilla.anim = time()
+            if carmilla.sp < 7 or carmilla.sp > 9 then
+                carmilla.sp = 7
+                carmilla.glide_dir = 1
+            else
+                carmilla.sp += carmilla.glide_dir
+                if carmilla.sp >= 9 then
+                    carmilla.glide_dir = -1
+                elseif carmilla.sp <= 7 then
+                    carmilla.glide_dir = 1
+                end
+            end
+        end
+
+    -- falling
+    elseif carmilla.falling then
+        carmilla.sp = 1
+
+    -- running
+    elseif carmilla.running then
+        if time() - carmilla.anim > 0.1 then
+            carmilla.anim = time()
+            if carmilla.sp < 2 or carmilla.sp >= 4 then
+                carmilla.sp = 2
+            else
+                carmilla.sp += 1
+            end
+        end
+
+    -- idle
+    else
+        carmilla.sp = 1
+    end
+end
+
+
 __gfx__
-00000000000000000099990000099990000999900000000000000000000000000000000000000000007700000000000000ff990000dd20000055550077700000
-00000000009999000998f80000998f8000998f800000000000000000500000050000000000000000000770000000000007aa44d00dddd2000566775077777000
-000000000998f800099fff000099fff00099fff000000000000000005500005500000000000000000066760000e000000077dd000dddd2005666677577777700
-00000000099fff000995550000955500009555000000000000000000658008560000000000000000067667600e0eeee007bb11d00dddd2d25666667500040000
-00000000099555000058885000588850005888500000000000000000065757605580085505800850676776760e0e0e007bbb111d0dddd2d25666666590040000
-000000000058885000588850005888500058885000000000000000000055550006575760055757506767767600e000007bbb111d0ddddd2005666650f0040000
-00000000005888500058885000588850005888500000000000000000000000000055550055655655676676760000000007bb11d00dddd2000055550080040000
-0000000005588850005888500558885055888500000000000000000000000000000000000600006006666660000000000777ddd000aa400000000000f0040000
+00000000000000000099990000099990000999900099900000099900000000000000000000000000007700000000000000ff990000dd20000055550077700000
+00000000009999000998f80000998f8000998f800999990ff0999990500000050000000000000000000770000000000007aa44d00dddd2000566775077777000
+000000000998f800099fff000099fff00099fff0f055500ff005550f5500005500000000000000000066760000e000000077dd000dddd2005666677577777700
+00000000099fff00099555000095550000955500f55555f00f55555f658008560000000000000000067667600e0eeee007bb11d00dddd2d25666667500040000
+00000000099555000058885000588850005888500555550000555550065757605580085505800850676776760e0e0e007bbb111d0dddd2d25666666590040000
+000000000058885000588850005888500058885005555500005555500055550006575760055757506767767600e000007bbb111d0ddddd2005666650f0040000
+00000000005888500058885000588850005888500555550000555550000000000055550055655655676676760000000007bb11d00dddd2000055550080040000
+000000000558885000588850055888505588850000f0f000000f0f0000000000000000000600006006666660000000000777ddd000aa400000000000f0040000
 00000000004444000044440000dddd0000dddd000000000000000000000000000000000000000000000000000000000000000000000995555004000000077000
 000000000048f8000048f80000d8480000d84800000000000000000000000000000000000000000000077700000000000000000000005888850f000000777700
 00000000004fff00004fff000dd444000dd4440000000000000000000000000000000000000000000077777000000000000f40000000588885f0000007777770
@@ -570,13 +651,13 @@ __gfx__
 000000000011110000111100005555000055550001001555010015550000000000000000000000000000000000000000f11555556ff0f555444c00fffff00000
 0000000000f00f0000f00f0000f00f0000f00f000f00f53b0f00f53b0000000000000000000000000000000000000000001555666f0ff55504c0006666600000
 000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001555556ffff55504cf055655550000
-0000000000000000000000000000000000000000000000000000000000000000000000000000000000000eeeeee00000f1155f556ff0f5550000f55655550000
-000000000000000000000000000000000000000000000000000000000000000000000000000000000000eeeeeeee0000f1155f556f0ff55500000f55555f0000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000eeeeeeeeee00000000f5500ccc50000000011111f0000
-0000000000000000000000000000000000000000000000000000000000000000000000000000000000eeeeeeeeeeee00000000000000000000000011111f0000
-000000000000000000000000000000000000000000000000000000000000000000000000000000000eeeeeeeeeeeeee000000000000000000000001101100000
-000000000000000000000000000000000000000000000000000000000000000000000000000000000eeeeeeeeeeeeee000000000000000000000001101100000
-000000000000000000000000000000000000000000000000000000000000000000000000000000000eeeeeeeeeeeeee00000000000000000000000ff0ff00000
+000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f1155f556ff0f5550000f55655550000
+000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f1155f556f0ff55500000f55555f0000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f5500ccc50000000011111f0000
+000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000011111f0000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001101100000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001101100000
+0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ff0ff00000
 33b3333303b0000303000030333333b300330000211a111100a000a000000000000006aa000000000000000006a0000000000002111211111100000000000000
 b3333333b33000b333330033b3b33333000300001111111a00a00040009ff000000666aaa00000000000000066aa000000000022211221122110006600000000
 bb33b33bbbb333b3b3b30333b333bb3b0003b0001111111104a4a440009ff0000006e6a4aa00000000000006e6aa0000000002c2221111112112055a00000000
