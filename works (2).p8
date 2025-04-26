@@ -652,6 +652,7 @@ function update_carmilla()
     
 
     -- map limit check (y = 368)
+    carmilla.x = max(0, carmilla.x) -- make sure she doesn't go off the map
     if carmilla.y > 376 then
         carmilla.lives -= 1
         if carmilla.lives > 0 then
