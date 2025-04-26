@@ -499,7 +499,7 @@ function update_carmilla()
     -- jump from pressing z
     if btnp(🅾️) and carmilla.landed then
         carmilla.dy-=carmilla.boost
-        carmilla.landed=false
+        carmilla.landed=false -- caused her to fall off ladder
         carmilla.jumping = true
         -- check for up collision
     elseif carmilla.jumping then
@@ -514,6 +514,15 @@ function update_carmilla()
     elseif carmilla.climbing then -- makes sure she isn't climbing forever
         carmilla.climbing = false
     end
+
+    -- jumping off ladder
+    if carmilla.climbing and btnp(🅾️) then
+        carmilla.climbing = false
+        carmilla.jumping = true
+        carmilla.landed = false
+        carmilla.dy -= carmilla.boost * 0.7
+    end
+
 
     -- check collision up and down
     if carmilla.dy > 0 then
@@ -550,7 +559,20 @@ function update_carmilla()
 
     carmilla.x += carmilla.dx
     carmilla.y += carmilla.dy -- probably what was causing our issue
-    -- vertical movement
+
+    -- handle stepping off top of ladder
+    if carmilla.climbing and btn(⬆️) then
+        if collide_map(carmilla, "up", FLAG_SOLID) then
+            carmilla.y -= 20
+            if not collide_map(carmilla, "up", FLAG_LADDER) then
+                carmilla.climbing = false
+                carmilla.landed = true
+                carmilla.falling = false
+                carmilla.dy = 0
+            end
+        end 
+    end
+
     
 
     -- map limit check (y = 368)

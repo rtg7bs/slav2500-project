@@ -607,6 +607,14 @@ function update_carmilla()
         carmilla.climbing = false
     end
 
+      -- jumping off ladder
+    if carmilla.climbing and btnp(🅾️) then
+        carmilla.climbing = false
+        carmilla.jumping = true
+        carmilla.landed = false
+        carmilla.dy -= carmilla.boost * 0.3
+    end
+
     -- check collision up and down
     if carmilla.dy > 0 then
         carmilla.falling = true
@@ -638,11 +646,22 @@ function update_carmilla()
             carmilla.dx=0
         end
     end
-
+    
+    -- handle stepping off top of ladder
+    if carmilla.climbing and btn(⬆️) then
+        if collide_map(carmilla, "up", FLAG_SOLID) then
+            carmilla.y -= 20
+            if not collide_map(carmilla, "up", FLAG_LADDER) then
+                carmilla.climbing = false
+                carmilla.landed = true
+                carmilla.falling = false
+                carmilla.dy = 0
+            end
+        end 
+    end
 
     carmilla.x += carmilla.dx
-    carmilla.y += carmilla.dy -- probably what was causing our issue
-    -- vertical movement
+    carmilla.y += carmilla.dy 
     
 
     -- map limit check (y = 368)
