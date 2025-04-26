@@ -68,7 +68,7 @@ end
 function apply_difficulty()
     if difficulty == "easy" then
         anim_timer = 0  -- global anim_timer for npc animation
-        countdown_timer = 5*60
+        countdown_timer = 1*60
         carmilla.lives = 5
     elseif difficulty == "hard" then
         anim_timer = 0  -- global anim_timer for npc animation
@@ -348,7 +348,13 @@ end
         else
             display_time = display_time .. secs
         end
-        print(display_time, 5, 18, 7)
+        if countdown_timer < 30 then
+
+            print(display_time, 5, 18, 8)
+        else
+            print(display_time, 5, 18, 7)
+        end
+
     end
 }
 
