@@ -5,6 +5,7 @@ __lua__
 FLAG_SOLID = 1
 FLAG_LADDER = 2
 FLAG_checkpoint = 3
+FLAG_DOOR = 4
 start_x = 40 * 8
 start_y = 20 * 8
 
@@ -232,11 +233,12 @@ items = {
     },
 
     {
-        x=127*8, y=12*8,
+        x=30*8, y=14*8, -- change back to 127*8, y=12*8
         w = 8, h = 8,
         name = "key",
         sprite = 11,
-        picked = false
+        picked = false,
+        door_opened = false
     },
 
     {
@@ -416,7 +418,7 @@ end
             if not item.picked then
                 spr(item.sprite, item.x, item.y)
             end
-                    end
+        end
         
         -- draw npcs
         for key, val in pairs(npcs) do
@@ -781,22 +783,20 @@ function update_carmilla()
     local max_dx = 3
     local friction = 0.7
                 
-                local tx = flr((carmilla.x + 4) / 8)
-                local ty = flr((carmilla.y + 4) / 8)
-                if fget(mget(tx, ty), 3) then
-                    if not carmilla.checkpoint or carmilla.checkpoint.x ~= carmilla.x or carmilla.checkpoint.y ~= carmilla.y then
-                        carmilla.checkpoint.x = carmilla.x
-                        carmilla.checkpoint.y = carmilla.y
-                        checkpoint_message_timer = checkpoint_message_duration
-                        sfx(3)
-                    end 
+    local tx = flr((carmilla.x + 4) / 8)
+    local ty = flr((carmilla.y + 4) / 8)
+    if fget(mget(tx, ty), 3) then
+        if not carmilla.checkpoint or carmilla.checkpoint.x ~= carmilla.x or carmilla.checkpoint.y ~= carmilla.y then
+            carmilla.checkpoint.x = carmilla.x
+            carmilla.checkpoint.y = carmilla.y
+            checkpoint_message_timer = checkpoint_message_duration
+            sfx(3)
+        end 
                                                             
-                end
+    end
                 
     -- physics
-
-
-  if not carmilla.landed and not carmilla.climbing and btn(⬆️) and btn(❎) and carmilla.dy >= 0 then
+    if not carmilla.landed and not carmilla.climbing and btn(⬆️) and btn(❎) and carmilla.dy >= 0 then
         carmilla.gliding = true
         carmilla.dy = 0.5
     elseif not carmilla.climbing then
@@ -835,26 +835,37 @@ function update_carmilla()
     end
     
     for item in all(items) do
-    if not item.picked and
-       carmilla.x < item.x + item.w and
-       carmilla.x + carmilla.w > item.x and
-       carmilla.y < item.y + item.h and
-       carmilla.y + carmilla.h > item.y then
+        if not item.picked and
+        carmilla.x < item.x + item.w and
+        carmilla.x + carmilla.w > item.x and
+        carmilla.y < item.y + item.h and
+        carmilla.y + carmilla.h > item.y then
 
-        item.picked = true
-        sfx(0)
-        add(carmilla.inventory, {name=item.name, sprite=item.sprite})
-        -- optional: play sound, show message, etc.
+            item.picked = true
+            sfx(0)
+            add(carmilla.inventory, {name=item.name, sprite=item.sprite})
+            -- optional: play sound, show message, etc.
 
-        if item.name == "gloves" then
-            has_gloves = true
+            if item.name == "gloves" then
+                has_gloves = true
+            end
+
+            if item.name == "key" then
+                if not item.door_opened then
+                    --spr(110, 52*8, 30*8)
+                    --spr(94, 52*8, 30*8)
+                    local bottom_door_x = 52
+                    local bottom_door_y = 30
+                    local top_door_x = 52
+                    local top_door_y = 29
+                    mset(bottom_door_x, bottom_door_y, 0)  
+                    mset(top_door_x, top_door_y, 0)
+
+                    -- prevent running this code every time
+                    item.door_opened = true
+                end
+            end
         end
-
-        if item.name == "key" then
-            spr(110, 52*8, 30*8)
-            spr(94, 52*8, 30*8)
-        end
-    end
     end
 
 
@@ -876,6 +887,34 @@ function update_carmilla()
         end
     elseif carmilla.climbing then -- makes sure she isn't climbing forever
         carmilla.climbing = false
+    end
+
+    -- allow carmilla to get off lader onto solid ground 
+    if not carmilla.gliding and btn(⬆️) and collide_map(carmilla, "up", FLAG_SOLID) then
+        carmilla.y -= 5
+        carmilla.climbing = false
+        carmilla.landed = true
+        carmilla.dy = 0
+    end
+
+    -- allow jump off ladder
+    if carmilla.climbing and btn(🅾️) then
+        carmilla.climbing = false
+        carmilla.dy -= carmilla.boost * 0.2
+        carmilla.jumping = true
+        carmilla.falling = true
+    end
+
+    -- if key is collected, make door invisible
+    for item in all(items) do
+        if item.name == "key" and item.picked then
+            if collide_map(carmilla, "left", FLAG_DOOR) or collide_map(carmilla, "right", FLAG_DOOR) then
+                local door_x = 52
+                local door_y = 30
+                -- erase door
+                mset(door_x, door_y, 0)  
+            end
+        end
     end
 
     -- check collision up and down
@@ -928,7 +967,8 @@ function update_carmilla()
 
 
     -- map limit check (y = 368)
- if carmilla.y > 376 then
+    carmilla.x = max(0, carmilla.x) -- make sure she doesn't go off the map
+    if carmilla.y > 376 then
     carmilla.lives -= 1
     if carmilla.lives > 0 then
          if carmilla.checkpoint then

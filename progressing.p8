@@ -4,6 +4,7 @@ __lua__
 -- constants for flags on tiles
 FLAG_SOLID = 1
 FLAG_LADDER = 2
+FLAG_DOOR = 4
 FLAG_checkpoint = 3
 start_x = 40 * 8
 start_y = 20 * 8
@@ -46,6 +47,7 @@ function _init()
         boost = 3.5,
         anim = 0,
         lives = 3,
+        has_key = false,
         delivered_items = 0,
         gloves = false,
         glide_dir = 1, -- controls ping-pong of gliding
@@ -322,7 +324,10 @@ end
 	        if not item.picked then
 	            spr(item.sprite, item.x, item.y)
 	        end
-    				end
+    	end
+
+        -- draw key
+        spr(11, 18*8, 12*8)
         
         -- draw npcs
         for key, val in pairs(npcs) do
@@ -557,20 +562,19 @@ function update_carmilla()
     local max_dx = 3
     local friction = 0.7
 				
-				local tx = flr((carmilla.x + 4) / 8)
-				local ty = flr((carmilla.y + 4) / 8)
-				if fget(mget(tx, ty), 3) then
-				    carmilla.checkpoint.x = carmilla.x
-				    carmilla.checkpoint.y = carmilla.y
-        sfx(3) 
-								                            
-				end
+	local tx = flr((carmilla.x + 4) / 8)
+	local ty = flr((carmilla.y + 4) / 8)
+	if fget(mget(tx, ty), 3) then
+		carmilla.checkpoint.x = carmilla.x
+		carmilla.checkpoint.y = carmilla.y
+        sfx(3) 							                            
+	end
 				
-    -- physics
+-- physics
 
-  if not carmilla.landed and not carmilla.climbing and btn(⬆️) and btn(❎) and carmilla.dy >= 0 then
-        carmilla.gliding = true
-        carmilla.dy = 0.5
+if not carmilla.landed and not carmilla.climbing and btn(⬆️) and btn(❎) and carmilla.dy >= 0 then
+    carmilla.gliding = true
+    carmilla.dy = 0.5
     elseif not carmilla.climbing then
         carmilla.dy += gravity
     elseif carmilla.gliding then
@@ -607,17 +611,17 @@ function update_carmilla()
     end
     
     for item in all(items) do
-    if not item.picked and
-       carmilla.x < item.x + item.w and
-       carmilla.x + carmilla.w > item.x and
-       carmilla.y < item.y + item.h and
-       carmilla.y + carmilla.h > item.y then
+        if not item.picked and
+            carmilla.x < item.x + item.w and
+            carmilla.x + carmilla.w > item.x and
+            carmilla.y < item.y + item.h and
+            carmilla.y + carmilla.h > item.y then
 
-        item.picked = true
-        sfx(0)
-        add(carmilla.inventory, {name=item.name, sprite=item.sprite})
+            item.picked = true
+            sfx(0)
+            add(carmilla.inventory, {name=item.name, sprite=item.sprite})
         -- optional: play sound, show message, etc.
-    end
+        end
     end
 
     -- jump from pressing z
@@ -640,7 +644,7 @@ function update_carmilla()
         carmilla.climbing = false
     end
 
-    -- allow camrilla to get off lader onto solid ground 
+    -- allow carmilla to get off lader onto solid ground 
     if not carmilla.gliding and btn(⬆️) and collide_map(carmilla, "up", FLAG_SOLID) then
         carmilla.y -= 5
         carmilla.climbing = false
@@ -654,6 +658,11 @@ function update_carmilla()
         carmilla.dy -= carmilla.boost * 0.2
         carmilla.jumping = true
         carmilla.falling = true
+    end
+
+    -- check door collision
+    if collide_map(carmilla, "left", FLAG_DOOR) or collide_map(carmilla, "right", FLAG_DOOR) then
+        -- make door disappear 
     end
 
     -- check collision up and down
@@ -926,7 +935,7 @@ f111f1000000300000000b0003300000001111111111000011111111000000005445555a00000000
 00000444000000003333303333333333000000000001110001101111110110000000000001111111111111100000000000000000000000110055555555550055
 00000044000000000333333333333330000000000000011110001111110100000000000000111111111111100000000000000000000000110055555555555555
 __gff__
-0000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000003030303000305080000000000000000030303030303030800000000000000000303030303030308000000000000000003000000030303000000000000000000
+0000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000003030303000305080000000000000000030303030303130800000000000000000303030303030308000000000000000003000000030303000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __map__
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
