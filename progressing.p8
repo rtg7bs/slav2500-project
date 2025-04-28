@@ -640,6 +640,22 @@ function update_carmilla()
         carmilla.climbing = false
     end
 
+    -- allow camrilla to get off lader onto solid ground 
+    if not carmilla.gliding and btn(⬆️) and collide_map(carmilla, "up", FLAG_SOLID) then
+        carmilla.y -= 5
+        carmilla.climbing = false
+        carmilla.landed = true
+        carmilla.dy = 0
+    end
+
+    -- allow jump off ladder
+    if carmilla.climbing and btn(🅾️) then
+        carmilla.climbing = false
+        carmilla.dy -= carmilla.boost * 0.2
+        carmilla.jumping = true
+        carmilla.falling = true
+    end
+
     -- check collision up and down
     if carmilla.dy > 0 then
         carmilla.falling = true
