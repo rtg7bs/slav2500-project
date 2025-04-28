@@ -690,19 +690,20 @@ function update_carmilla()
 
 
     -- map limit check (y = 368)
- if carmilla.y > 376 then
-    carmilla.lives -= 1
-    if carmilla.lives > 0 then
-         if carmilla.checkpoint then
-            carmilla.x = carmilla.checkpoint.x
-            carmilla.y = carmilla.checkpoint.y
-        else
-            -- default spawn position
-            carmilla.x = 40 * 8
-            carmilla.y = 20 * 8
-            carmilla.dx = 0
-            carmilla.dy = 0
-        end
+    carmilla.x = max(0, carmilla.x) -- make sure she doesn't go off the map
+    if carmilla.y > 376 then
+        carmilla.lives -= 1
+        if carmilla.lives > 0 then
+            if carmilla.checkpoint then
+                carmilla.x = carmilla.checkpoint.x
+                carmilla.y = carmilla.checkpoint.y
+            else
+                -- default spawn position
+                carmilla.x = 40 * 8
+                carmilla.y = 20 * 8
+                carmilla.dx = 0
+                carmilla.dy = 0
+            end
             
         else
             state = "gameover_lost"
