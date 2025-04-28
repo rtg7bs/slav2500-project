@@ -875,7 +875,7 @@ function update_carmilla()
     -- jump from pressing z
     if btnp(🅾️) and carmilla.landed then
         sfx(2)
-        carmilla.dy-=carmilla.boost
+        carmilla.dy -= carmilla.boost
         carmilla.landed=false
         carmilla.jumping = true
         -- check for up collision
@@ -893,7 +893,7 @@ function update_carmilla()
     end
 
     -- allow carmilla to get off lader onto solid ground 
-    if not carmilla.gliding and btn(⬆️) and collide_map(carmilla, "up", FLAG_SOLID) then
+    if not carmilla.gliding and btn(⬆️) and carmilla.climbing and collide_map(carmilla, "up", FLAG_SOLID) then
         carmilla.y -= 5
         carmilla.climbing = false
         carmilla.landed = true
