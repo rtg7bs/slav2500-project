@@ -242,7 +242,7 @@ items = {
     },
 
     {
-        x=85*8, y=9*8,
+        x=29*8, y=14*8, -- change back to x=85*8, y=9*8,
         w = 8, h = 8,
         name = "garlic",
         sprite = 10,
@@ -847,7 +847,10 @@ function update_carmilla()
             -- optional: play sound, show message, etc.
 
             if item.name == "gloves" then
-                has_gloves = true
+                carmilla.has_gloves = true
+            end
+            if item.name == "garlic" and not carmilla.has_gloves then
+                carmilla.lives -= 1
             end
 
             if item.name == "key" then
