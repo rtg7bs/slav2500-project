@@ -142,7 +142,7 @@ npcs = {
         spr2 = 36,
         show_prompt = false,
         talking = false,
-        text = "headmistress turn \ninto a bat to get \nthe garlic in\nthe sky."
+        text = "headmistress turn \ninto a bat to get \nthe 2 garlics in\nthe sky."
     },
     key_npc = {
         x = 90 * 8, y = 29 * 8, w = 8, h = 8,
